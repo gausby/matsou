@@ -1,0 +1,8 @@
+%{"hamcrest": {:hex, :hamcrest, "0.1.1"},
+  "linguist": {:hex, :linguist, "0.1.5"},
+  "meck": {:hex, :meck, "0.8.4"},
+  "pooler": {:hex, :pooler, "1.5.0"},
+  "protobuffs": {:hex, :protobuffs, "0.8.2"},
+  "riak": {:hex, :riak, "1.0.0"},
+  "riak_pb": {:hex, :riak_pb, "2.1.0"},
+  "riakc": {:hex, :riakc, "2.1.1"}}
