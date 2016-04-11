@@ -5,4 +5,5 @@
   "protobuffs": {:hex, :protobuffs, "0.8.2"},
   "riak": {:hex, :riak, "1.0.0"},
   "riak_pb": {:hex, :riak_pb, "2.1.0"},
-  "riakc": {:hex, :riakc, "2.1.1"}}
+  "riakc": {:hex, :riakc, "2.1.1"},
+  "vex": {:hex, :vex, "0.5.0"}}

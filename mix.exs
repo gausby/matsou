@@ -18,6 +18,7 @@ defmodule Matsou.Mixfile do
   end
 
   defp deps do
-    [{:riak, "~> 1.0.0"}]
+    [{:riak, "~> 1.0.0", only: [:div, :test]},
+     {:vex, "0.5.0"}]
   end
 end
