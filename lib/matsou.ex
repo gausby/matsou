@@ -16,7 +16,7 @@ defmodule Matsou do
   end
 
   def valid?(struct) do
-    struct
+    false
   end
 end
 
