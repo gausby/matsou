@@ -11,7 +11,7 @@ defmodule Matsou do
 
   defmacro __using__(_) do
     quote do
-      import Matsou, only: [valid?: 1]
+      import unquote(__MODULE__)
     end
   end
 
