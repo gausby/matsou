@@ -8,28 +8,4 @@ defmodule Matsou do
   # should fail if a dirty value fail to validate
 
   # counters, should be able to set, increment, or decrement value probably with a fn old -> new end
-
-  defmacro __using__(_) do
-    quote do
-      import unquote(__MODULE__)
-    end
-  end
-
-  def valid?(struct) do
-    false
-  end
-end
-
-defmodule Matsou.Struct do
-  @moduledoc """
-  A struct that hold the data to convert a value to a Riak CRDT
-  """
-  defstruct(
-    data: nil,
-    type: nil,
-    dirty: [],
-    valid?: false
-  )
-
-  @type type_identifier :: :counter | :map | :register | :flag | nil
 end

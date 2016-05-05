@@ -8,6 +8,7 @@ defmodule Matsou.Schema do
   defmacro schema(bucket, [do: block]) do
     quote do
       Module.register_attribute(__MODULE__, :struct_fields, accumulate: true)
+      Module.register_attribute(__MODULE__, :changeset_fields, accumulate: true)
       Module.register_attribute(__MODULE__, :matsou_fields, accumulate: true)
 
       bucket = unquote(bucket)
@@ -22,6 +23,7 @@ defmodule Matsou.Schema do
 
       Module.eval_quoted __ENV__, [
         Matsou.Schema.__defstruct__(@struct_fields),
+        Matsou.Schema.__changeset__(@changeset_fields),
         Matsou.Schema.__schema__(bucket_type, bucket)
       ]
     end
@@ -38,9 +40,19 @@ defmodule Matsou.Schema do
 
   @doc false
   def __field__(mod, name, type, _opts) do
+    Module.put_attribute(mod, :changeset_fields, {name, type})
     put_struct_field(mod, name)
 
+    # this will become important when we get into virtual fields
     Module.put_attribute(mod, :matsou_fields, {name, type})
+  end
+
+  @doc false
+  def __changeset__(changeset_fields) do
+    map = changeset_fields |> Enum.into(%{}) |> Macro.escape()
+    quote do
+      def __changeset__, do: unquote(map)
+    end
   end
 
   @doc false
