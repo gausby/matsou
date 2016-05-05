@@ -25,6 +25,10 @@ defmodule Matsou.SchemaTest do
     assert Map.has_key? %MyModule{}, :age
   end
 
+  test "should have a db key assigned to nil by default" do
+    # pending
+  end
+
   test "should set bucket type to default if none is specified" do
     assert MyModule.__schema__(:type) == "default"
   end

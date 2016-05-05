@@ -6,12 +6,10 @@ defmodule Matsou.Schema do
   end
 
   defmacro schema(bucket, [do: block]) do
-    schema(bucket, block, true)
-  end
-
-  defp schema(bucket, block, _) do
     quote do
       Module.register_attribute(__MODULE__, :struct_fields, accumulate: true)
+      Module.register_attribute(__MODULE__, :matsou_fields, accumulate: true)
+
       bucket = unquote(bucket)
       bucket_type = Module.get_attribute(__MODULE__, :bucket_type) || "default"
 
@@ -29,6 +27,9 @@ defmodule Matsou.Schema do
     end
   end
 
+  # struct_fields - the stuff that ends up in the struct
+  # matsou_fields - the stuff that should get saved to the database
+
   defmacro field(name, type \\ :register, opts \\ []) do
     quote bind_quoted: [name: name, type: type, opts: opts] do
       Matsou.Schema.__field__(__MODULE__, name, type, opts)
@@ -36,8 +37,10 @@ defmodule Matsou.Schema do
   end
 
   @doc false
-  def __field__(mod, name, _type, _opts) do
+  def __field__(mod, name, type, _opts) do
     put_struct_field(mod, name)
+
+    Module.put_attribute(mod, :matsou_fields, {name, type})
   end
 
   @doc false
