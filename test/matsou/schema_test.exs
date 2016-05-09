@@ -5,7 +5,7 @@ defmodule Matsou.SchemaTest do
   defmodule MyModule do
     use Matsou.Schema
 
-    schema "user" do
+    schema "default" do
       field :name, :register
       field :age, :counter
     end
@@ -13,8 +13,8 @@ defmodule Matsou.SchemaTest do
 
   defmodule MyModuleWithBucketType do
     use Matsou.Schema
-    @bucket_type "foo"
-    schema "user" do
+    @bucket "user"
+    schema "foo" do
       field :name, :register
       field :age, :counter
     end

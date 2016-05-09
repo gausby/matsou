@@ -5,14 +5,14 @@ defmodule Matsou.Schema do
     end
   end
 
-  defmacro schema(bucket, [do: block]) do
+  defmacro schema(bucket_type, [do: block]) do
     quote do
       Module.register_attribute(__MODULE__, :struct_fields, accumulate: true)
       Module.register_attribute(__MODULE__, :changeset_fields, accumulate: true)
       Module.register_attribute(__MODULE__, :matsou_fields, accumulate: true)
 
-      bucket = unquote(bucket)
-      bucket_type = Module.get_attribute(__MODULE__, :bucket_type) || "default"
+      bucket_type = unquote(bucket_type)
+      bucket = Module.get_attribute(__MODULE__, :bucket)
 
       try do
         import Matsou.Schema
