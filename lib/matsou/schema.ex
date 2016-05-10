@@ -21,10 +21,13 @@ defmodule Matsou.Schema do
         :ok
       end
 
+      fields = @matsou_fields |> Enum.reverse
+
       Module.eval_quoted __ENV__, [
         Matsou.Schema.__defstruct__(@struct_fields),
         Matsou.Schema.__changeset__(@changeset_fields),
-        Matsou.Schema.__schema__(bucket_type, bucket)
+        Matsou.Schema.__schema__(bucket_type, bucket),
+        Matsou.Schema.__types__(fields)
       ]
     end
   end
@@ -78,6 +81,29 @@ defmodule Matsou.Schema do
     quote do
       def __schema__(:bucket), do: unquote(bucket)
       def __schema__(:type), do: unquote(bucket_type)
+    end
+  end
+
+  @doc false
+  def __types__(fields) do
+    quoted =
+      Enum.map(fields, fn {name, type} ->
+        quote do
+          def __schema__(:type, unquote(name)) do
+            unquote(Macro.escape(type))
+          end
+        end
+      end)
+
+    types = Macro.escape(Map.new(fields))
+    quote do
+      def __schema__(:types) do
+        unquote(types)
+      end
+      unquote(quoted)
+      def __schema__(:type, _) do
+        nil
+      end
     end
   end
 end

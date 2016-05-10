@@ -15,9 +15,7 @@ defmodule Matsou.Bucket do
   end
 
   defp into_structure(data, struct) do
-    test = struct(struct)
     {:map, data, _, _, _} = data
-
     data = data |> Enum.map(&foo/1) |> Enum.into(%{})
     struct(struct, data)
   end

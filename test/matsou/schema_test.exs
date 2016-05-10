@@ -36,4 +36,10 @@ defmodule Matsou.SchemaTest do
   test "a bucket type should be specifiable" do
     assert MyModuleWithBucketType.__schema__(:type) == "foo"
   end
+
+  test "a bucket type should " do
+    assert MyModuleWithBucketType.__schema__(:types) == %{name: :register, age: :counter}
+    assert MyModuleWithBucketType.__schema__(:type, :name) == :register
+  end
+
 end
