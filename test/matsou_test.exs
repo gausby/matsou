@@ -14,6 +14,6 @@ defmodule MatsouTest do
   end
 
   test "Should be able to get from a repo" do
-    IO.inspect Matsou.Repo.get(User, "1")
+    IO.inspect Matsou.Bucket.get(User, "1")
   end
 end

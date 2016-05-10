@@ -1,4 +1,5 @@
-defmodule Matsou.Repo do
+defmodule Matsou.Bucket do
+  # reference Ecto.Repo
 
   def get(struct, id, _opts \\ []) when is_atom(struct) do
     bucket_name = struct.__schema__(:bucket)
