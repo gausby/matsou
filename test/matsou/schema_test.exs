@@ -41,5 +41,4 @@ defmodule Matsou.SchemaTest do
     assert MyModuleWithBucketType.__schema__(:types) == %{name: :register, age: :counter}
     assert MyModuleWithBucketType.__schema__(:type, :name) == :register
   end
-
 end

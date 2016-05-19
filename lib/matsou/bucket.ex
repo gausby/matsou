@@ -1,6 +1,16 @@
 defmodule Matsou.Bucket do
   # reference Ecto.Repo
 
+  @doc false
+  defmacro __using__(opts) do
+    quote bind_quoted: [opts: opts] do
+
+      def insert(struct, opts \\ []) do
+        Matsou.Bucket.Schema.insert(__MODULE__, struct, opts)
+      end
+    end
+  end
+
   def get(struct, id, _opts \\ []) when is_atom(struct) do
     bucket_name = struct.__schema__(:bucket)
     bucket_type = struct.__schema__(:type)

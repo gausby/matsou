@@ -26,7 +26,7 @@ defmodule Matsou.Schema do
       Module.eval_quoted __ENV__, [
         Matsou.Schema.__defstruct__(@struct_fields),
         Matsou.Schema.__changeset__(@changeset_fields),
-        Matsou.Schema.__schema__(bucket_type, bucket),
+        Matsou.Schema.__schema__(bucket_type, bucket, fields),
         Matsou.Schema.__types__(fields)
       ]
     end
@@ -77,10 +77,13 @@ defmodule Matsou.Schema do
     end
   end
 
-  def __schema__(bucket_type, bucket) do
+  def __schema__(bucket_type, bucket, fields) do
+    field_names = Enum.map(fields, &elem(&1, 0))
     quote do
+      def __schema__(:query), do: %Matsou.Query{from: {unquote(bucket_type), __MODULE__}}
       def __schema__(:bucket), do: unquote(bucket)
       def __schema__(:type), do: unquote(bucket_type)
+      def __schema__(:fields), do: unquote(field_names)
     end
   end
 

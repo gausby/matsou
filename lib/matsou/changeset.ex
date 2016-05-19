@@ -3,13 +3,18 @@ defmodule Matsou.Changeset do
 
   @type error :: {String.t, Keyword.t}
 
-  @type t :: %Changeset{valid?: boolean(),
+  @type action :: :insert | nil
+  @type t :: %Changeset{action: action,
+                        bucket: binary | nil,
+                        valid?: boolean(),
                         data: Matsou.Schema.t | nil,
                         types: nil | %{atom => Matsou.Type.t}, # todo Matsou.Type
                         changes: %{atom => term},
                         errors: [{atom, error}]}
 
   defstruct(
+    action: nil,
+    bucket: nil,
     valid?: nil,
     data: nil,
     types: nil,
@@ -18,7 +23,7 @@ defmodule Matsou.Changeset do
   )
 
   def change(data, changes \\ %{})
-  def change(%{__struct__: struct} = data, changes) when is_list(changes) do
+  def change(%{__struct__: struct} = data, changes) when is_map(changes) or is_list(changes) do
     types = struct.__changeset__
 
     {changes, errors, valid?} =
