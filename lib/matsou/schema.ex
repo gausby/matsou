@@ -42,9 +42,10 @@ defmodule Matsou.Schema do
   end
 
   @doc false
-  def __field__(mod, name, type, _opts) do
+  def __field__(mod, name, type, opts) do
     Module.put_attribute(mod, :changeset_fields, {name, type})
-    put_struct_field(mod, name)
+    default = Keyword.get(opts, :default)
+    put_struct_field(mod, name, default)
 
     # this will become important when we get into virtual fields
     Module.put_attribute(mod, :matsou_fields, {name, type})
@@ -65,15 +66,15 @@ defmodule Matsou.Schema do
     end
   end
 
-  defp put_struct_field(mod, name) do
+  defp put_struct_field(mod, key, default) do
     fields = Module.get_attribute(mod, :struct_fields)
 
-    case name in fields do
+    case key in fields do
       true ->
-        raise ArgumentError, "Field already #{inspect name} set on schema"
+        raise ArgumentError, "Field already #{inspect key} set on schema"
 
       _ ->
-        Module.put_attribute(mod, :struct_fields, name)
+        Module.put_attribute(mod, :struct_fields, {key, default})
     end
   end
 
