@@ -28,7 +28,13 @@ defmodule Matsou.Bucket.Schema do
   # build
   defp build_crdt(%Changeset{action: :insert} = changeset, fields) do
     # build the CRDT here
-    changeset
+    Enum.reduce(changeset.changes, CRDT.Map.new(), fn {key, value}, acc ->
+      case {Map.get(changeset.types, key), to_string(key)} do
+        {:register, key} ->
+          register = CRDT.Register.new(value)
+          CRDT.Map.put(acc, key, register)
+      end
+    end)
   end
 
   # helpers
