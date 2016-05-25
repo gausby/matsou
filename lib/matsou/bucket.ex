@@ -20,7 +20,9 @@ defmodule Matsou.Bucket do
         nil
 
       data ->
-        data |> into_structure(struct)
+        data
+        |> into_structure(struct)
+        |> Matsou.put_meta(key: id)
     end
   end
 

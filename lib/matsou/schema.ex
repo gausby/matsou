@@ -1,4 +1,10 @@
 defmodule Matsou.Schema do
+  @type t :: %{__struct__: atom}
+
+  defmodule Metadata do
+    defstruct [:state, :key]
+  end
+
   defmacro __using__(_) do
     quote do
       import Matsou.Schema, only: [schema: 2]
@@ -20,6 +26,11 @@ defmodule Matsou.Schema do
       after
         :ok
       end
+
+      Module.put_attribute(
+        __MODULE__,
+        :struct_fields,
+        {:__meta__, %Metadata{state: :built, key: nil}})
 
       fields = @matsou_fields |> Enum.reverse
 
