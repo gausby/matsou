@@ -6,6 +6,7 @@ defmodule Matsou.Changeset do
   @type action :: :insert | nil
   @type t :: %Changeset{action: action,
                         bucket: binary | nil,
+                        type: binary | nil,
                         valid?: boolean(),
                         data: Matsou.Schema.t | nil,
                         types: nil | %{atom => Matsou.Type.t}, # todo Matsou.Type
@@ -15,6 +16,7 @@ defmodule Matsou.Changeset do
   defstruct(
     action: nil,
     bucket: nil,
+    type: nil,
     valid?: nil,
     data: nil,
     types: nil,

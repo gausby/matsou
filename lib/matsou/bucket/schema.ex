@@ -15,14 +15,64 @@ defmodule Matsou.Bucket.Schema do
     schema = struct.__struct__
     fields = schema.__schema__(:fields)
     bucket = schema.__schema__(:bucket)
+    bucket_type = schema.__schema__(:type)
 
     changeset
-    |> put_bucket_and_action(:insert, bucket)
+    |> put_action(:insert)
+    |> put_bucket_and_type(bucket, bucket_type)
     |> surface_changes(struct, types, fields)
     |> build_crdt(fields)
   end
   defp do_insert(_repo, %Changeset{valid?: false} = _changeset, _opts) do
     {:error, "invalid changeset"}
+  end
+
+  @doc """
+  Delete
+  """
+  def delete(repo, %Changeset{} = changeset, opts) do
+    do_delete(repo, changeset, opts)
+  end
+  def delete(repo, %{__struct__: _} = struct, opts) when is_list(opts) do
+    changeset =  Matsou.Changeset.change(struct)
+    do_delete(repo, changeset, opts)
+  end
+
+  defp do_delete(repo, %Changeset{valid?: true,
+                                  data: %{__meta__: %{key: key}}} = changeset, opts)
+  when key != nil do
+    struct = struct_from_changeset!(changeset)
+    schema = struct.__struct__
+    bucket = schema.__schema__(:bucket)
+    type = schema.__schema__(:type)
+
+    changeset =
+      changeset
+      |> put_action(:delete)
+      |> put_bucket_and_type(bucket, type)
+
+    changeset = %Changeset{changeset|changes: %{}}
+
+    case Riak.delete(bucket, type, key) do
+      :ok ->
+        put_in(changeset.data.__meta__.state, :deleted)
+
+      {:error, _} = error ->
+        error
+    end
+  end
+  defp do_delete(repo, %Changeset{valid?: false} = changeset, opts) do
+    struct = struct_from_changeset!(changeset)
+    schema = struct.__struct__
+    bucket = schema.__schema__(:bucket)
+    bucket_type = schema.__schema__(:type)
+
+    changeset =
+      changeset
+      |> put_action(:delete)
+      |> put_bucket_and_type(bucket, bucket_type)
+
+    {:error, changeset}
   end
 
   # build
@@ -38,8 +88,11 @@ defmodule Matsou.Bucket.Schema do
   end
 
   # helpers
-  defp put_bucket_and_action(changeset, action, bucket) do
-    %Changeset{changeset | action: action, bucket: bucket}
+  defp put_action(changeset, action) do
+    %Changeset{changeset | action: action}
+  end
+  defp put_bucket_and_type(changeset, bucket, bucket_type) do
+    %Changeset{changeset|bucket: bucket, type: bucket_type}
   end
 
   # go through all the fields and add the ones with default values

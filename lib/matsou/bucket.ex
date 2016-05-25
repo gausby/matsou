@@ -8,6 +8,10 @@ defmodule Matsou.Bucket do
       def insert(struct, opts \\ []) do
         Matsou.Bucket.Schema.insert(__MODULE__, struct, opts)
       end
+
+      def delete(struct, opts \\ []) do
+        Matsou.Bucket.Schema.delete(__MODULE__, struct, opts)
+      end
     end
   end
 
