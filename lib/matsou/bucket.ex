@@ -9,6 +9,10 @@ defmodule Matsou.Bucket do
         Matsou.Bucket.Schema.insert(__MODULE__, struct, opts)
       end
 
+      def update(struct, opts \\ []) do
+        Matsou.Bucket.Schema.update(__MODULE__, struct, opts)
+      end
+
       def delete(struct, opts \\ []) do
         Matsou.Bucket.Schema.delete(__MODULE__, struct, opts)
       end
@@ -26,7 +30,7 @@ defmodule Matsou.Bucket do
       data ->
         data
         |> into_structure(struct)
-        |> Matsou.put_meta(key: id)
+        |> Matsou.put_meta(key: id, raw: data)
     end
   end
 

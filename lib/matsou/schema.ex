@@ -1,13 +1,23 @@
 defmodule Matsou.Schema do
   @type t :: %{__struct__: atom}
 
+  alias Matsou.Changeset
+
   defmodule Metadata do
-    defstruct [:state, :key]
+    defstruct [:state, :key, :raw]
   end
+
+  @callback generate_key(Changeset.t) :: Changeset.t
 
   defmacro __using__(_) do
     quote do
       import Matsou.Schema, only: [schema: 2]
+
+      def generate_key(changeset) do
+        changeset
+      end
+
+      defoverridable [generate_key: 1]
     end
   end
 

@@ -15,16 +15,82 @@ defmodule Matsou.Bucket.Schema do
     schema = struct.__struct__
     fields = schema.__schema__(:fields)
     bucket = schema.__schema__(:bucket)
-    bucket_type = schema.__schema__(:type)
+    type = schema.__schema__(:type)
 
-    changeset
-    |> put_action(:insert)
-    |> put_bucket_and_type(bucket, bucket_type)
-    |> surface_changes(struct, types, fields)
-    |> build_crdt(fields)
+    key = "test" # todo!
+
+    changeset =
+      changeset
+      |> put_action(:insert)
+      |> put_bucket_and_type(bucket, type)
+      |> surface_changes(struct, types, fields)
+      |> build_crdt
+
+    case Riak.update(changeset.data.__meta__.raw, bucket, type, key) do
+      :ok ->
+        changeset = put_in(changeset.data, Map.merge(changeset.data, changeset.changes))
+        changeset = put_in(changeset.data.__meta__.state, :built)
+        put_in(changeset.data.__meta__.key, key)
+
+      {:error, _} = error ->
+        error
+    end
   end
   defp do_insert(_repo, %Changeset{valid?: false} = _changeset, _opts) do
     {:error, "invalid changeset"}
+  end
+
+  defp build_crdt(%Changeset{action: :insert, data: %{__meta__: %{raw: nil}}} = changeset) do
+    data = Enum.reduce(changeset.changes, CRDT.Map.new(), fn {key, value}, acc ->
+      case {Map.get(changeset.types, key), to_string(key)} do
+        {:register, key} ->
+          register = CRDT.Register.new(value)
+          CRDT.Map.put(acc, key, register)
+      end
+    end)
+
+    put_in(changeset.data.__meta__.raw, data)
+  end
+
+  @doc """
+  Update
+  """
+  def update(repo, %Changeset{} = changeset, opts) do
+    do_update(repo, changeset, opts)
+  end
+
+  defp do_update(_repo, %Changeset{data: %{__meta__: %{key: key}}} = changeset, _opts) when key != nil do
+    struct = struct_from_changeset!(changeset)
+    schema = struct.__struct__
+    bucket = schema.__schema__(:bucket)
+    type = schema.__schema__(:type)
+
+    changeset =
+      changeset
+      |> put_action(:update)
+      |> put_bucket_and_type(bucket, type)
+      |> update_crdt
+
+    case Riak.update(changeset.data.__meta__.raw, bucket, type, key) do
+      :ok ->
+        changeset = put_in(changeset.data, Map.merge(changeset.data, changeset.changes))
+        put_in(changeset.data.__meta__.state, :built)
+
+      {:error, _} = error ->
+        error
+    end
+  end
+
+  defp update_crdt(%Changeset{action: :update, data: %{__meta__: %{raw: crdt}}} = changeset) do
+    update = Enum.reduce(changeset.changes, crdt, fn {key, value}, acc ->
+      case {Map.get(changeset.types, key), to_string(key)} do
+        {:register, key} ->
+          register = CRDT.Register.new(value)
+          CRDT.Map.put(acc, key, register)
+      end
+    end)
+
+    put_in(changeset.data.__meta__.raw, update)
   end
 
   @doc """
@@ -38,8 +104,8 @@ defmodule Matsou.Bucket.Schema do
     do_delete(repo, changeset, opts)
   end
 
-  defp do_delete(repo, %Changeset{valid?: true,
-                                  data: %{__meta__: %{key: key}}} = changeset, opts)
+  defp do_delete(_repo, %Changeset{valid?: true,
+                                   data: %{__meta__: %{key: key}}} = changeset, _opts)
   when key != nil do
     struct = struct_from_changeset!(changeset)
     schema = struct.__struct__
@@ -61,7 +127,7 @@ defmodule Matsou.Bucket.Schema do
         error
     end
   end
-  defp do_delete(repo, %Changeset{valid?: false} = changeset, opts) do
+  defp do_delete(_repo, %Changeset{valid?: false} = changeset, _opts) do
     struct = struct_from_changeset!(changeset)
     schema = struct.__struct__
     bucket = schema.__schema__(:bucket)
@@ -73,18 +139,6 @@ defmodule Matsou.Bucket.Schema do
       |> put_bucket_and_type(bucket, bucket_type)
 
     {:error, changeset}
-  end
-
-  # build
-  defp build_crdt(%Changeset{action: :insert} = changeset, fields) do
-    # build the CRDT here
-    Enum.reduce(changeset.changes, CRDT.Map.new(), fn {key, value}, acc ->
-      case {Map.get(changeset.types, key), to_string(key)} do
-        {:register, key} ->
-          register = CRDT.Register.new(value)
-          CRDT.Map.put(acc, key, register)
-      end
-    end)
   end
 
   # helpers

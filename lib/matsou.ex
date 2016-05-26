@@ -22,4 +22,8 @@ defmodule Matsou do
   defp update_meta([{:key, key}|rest], meta) do
     update_meta(rest, %{meta|key: key})
   end
+
+  defp update_meta([{:raw, data}|rest], meta) do
+    update_meta(rest, %{meta|raw: data})
+  end
 end
