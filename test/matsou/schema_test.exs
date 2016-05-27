@@ -41,4 +41,31 @@ defmodule Matsou.SchemaTest do
     assert MyModuleWithBucketType.__schema__(:types) == %{name: :register, age: :counter}
     assert MyModuleWithBucketType.__schema__(:type, :name) == :register
   end
+
+  defmodule MyModuleWithCustomDefaultKeyRepo do
+    use Matsou.Bucket
+  end
+
+  defmodule MyModuleWithCustomDefaultKey do
+    use Matsou.Schema
+    @bucket "user"
+    schema "foo" do
+      field :name, :register
+      field :age, :counter
+    end
+
+    def generate_key(changeset) do
+      changeset.changes.name
+    end
+  end
+
+  test "the default key should be customizable" do
+    user =
+      %MyModuleWithCustomDefaultKey{}
+      |> Matsou.Changeset.change(name: "bar")
+      |> MyModuleWithCustomDefaultKeyRepo.insert
+
+    assert user.data.__meta__.key == "bar"
+    Riak.delete("user", "foo", "bar")
+  end
 end
