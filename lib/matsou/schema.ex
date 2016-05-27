@@ -7,14 +7,14 @@ defmodule Matsou.Schema do
     defstruct [:state, :key, :raw]
   end
 
-  @callback generate_key(Changeset.t) :: Changeset.t
+  @callback generate_key(Changeset.t) :: binary()
 
   defmacro __using__(_) do
     quote do
       import Matsou.Schema, only: [schema: 2]
 
-      def generate_key(changeset) do
-        changeset
+      def generate_key(_changeset) do
+        UUID.uuid4()
       end
 
       defoverridable [generate_key: 1]

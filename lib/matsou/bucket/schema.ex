@@ -17,14 +17,21 @@ defmodule Matsou.Bucket.Schema do
     bucket = schema.__schema__(:bucket)
     type = schema.__schema__(:type)
 
-    key = "test" # todo!
-
     changeset =
       changeset
       |> put_action(:insert)
       |> put_bucket_and_type(bucket, type)
       |> surface_changes(struct, types, fields)
       |> build_crdt
+
+    key =
+      case schema.generate_key(changeset) do
+        key when is_binary(key) ->
+          key
+
+        _ ->
+          {:error, :key_should_be_a_string}
+      end
 
     case Riak.update(changeset.data.__meta__.raw, bucket, type, key) do
       :ok ->

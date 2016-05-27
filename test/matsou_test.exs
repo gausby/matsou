@@ -20,11 +20,14 @@ defmodule MatsouTest do
   end
 
   test "Should be able to get from a repo" do
-    %User{}
-    |> Matsou.Changeset.change(name: "martin")
-    |> UserBucket.insert
+    user =
+      %User{}
+      |> Matsou.Changeset.change(name: "martin")
+      |> UserBucket.insert
 
-    assert %User{name: "martin"} = Matsou.Bucket.get(User, "test")
+    generated_key = user.data.__meta__.key
+
+    assert %User{name: "martin"} = Matsou.Bucket.get(User, generated_key)
   end
 
   test "Should be able to insert, find, change, and delete" do
@@ -34,17 +37,22 @@ defmodule MatsouTest do
       |> Matsou.Changeset.change(name: "hello")
       |> UserBucket.insert
     assert %Matsou.Changeset{action: :insert} = user
+
+    generated_key = user.data.__meta__.key
+
     # get the user
-    user = Matsou.Bucket.get(User, "test")
+    user = Matsou.Bucket.get(User, generated_key)
     assert %User{email: "john.doe@example.com"} = user
+
     # change data
     change =
       user
       |> Changeset.change(email: "foo@example.com")
       |> UserBucket.update
     assert %Changeset{action: :update, data: %{email: "foo@example.com"}} = change
+
     # delete user
     assert %Matsou.Changeset{action: :delete} = UserBucket.delete(user)
-    assert Matsou.Bucket.get(User, "test") == nil
+    assert Matsou.Bucket.get(User, generated_key) == nil
   end
 end
