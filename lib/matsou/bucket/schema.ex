@@ -25,13 +25,15 @@ defmodule Matsou.Bucket.Schema do
       |> build_crdt
 
     key =
-      case schema.generate_key(changeset) do
-        key when is_binary(key) ->
-          key
-
-        _ ->
-          {:error, :key_should_be_a_string}
+      unless changeset.data.__meta__.key do
+        schema.generate_key(changeset)
+      else
+        changeset.data.__meta__.key
       end
+
+    unless is_binary(key) do
+      raise ArgumentError, "key should be a binary got #{inspect key}"
+    end
 
     case Riak.update(changeset.data.__meta__.raw, bucket, type, key) do
       :ok ->

@@ -68,4 +68,16 @@ defmodule Matsou.SchemaTest do
     assert user.data.__meta__.key == "bar"
     Riak.delete("user", "foo", "bar")
   end
+
+  test "the default key should not be run if the key is already set" do
+    my_key = "my-key"
+    user =
+      %MyModuleWithCustomDefaultKey{}
+      |> Matsou.put_meta(key: my_key)
+      |> Matsou.Changeset.change(name: "bar")
+      |> MyModuleWithCustomDefaultKeyRepo.insert
+
+    refute user.data.__meta__.key == "bar"
+    Riak.delete("user", "foo", my_key)
+  end
 end
