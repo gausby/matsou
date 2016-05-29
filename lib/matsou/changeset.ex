@@ -21,7 +21,8 @@ defmodule Matsou.Changeset do
     data: nil,
     types: nil,
     changes: %{},
-    errors: []
+    errors: [],
+    validations: []
   )
 
   def change(data, changes \\ %{})
@@ -74,5 +75,75 @@ defmodule Matsou.Changeset do
       [_|_] ->
         %{changeset | errors: new ++ errors, valid?: false}
     end
+  end
+
+  @spec validate_change(t, atom, term, (atom, term -> [error])) :: t
+  def validate_change(%{validations: validations} = changeset, field, metadata, validator) do
+    changeset = %{changeset | validations: [{field, metadata}|validations]}
+    validate_change(changeset, field, validator)
+  end
+
+  @doc """
+
+  """
+  def validate_required() do
+    # todo
+  end
+
+  @doc """
+
+  """
+  def validate_length(changeset, field, opts) when is_list(opts) do
+    validate_change(changeset, field, {:length, opts}, fn _, value ->
+        {type, length} =
+          case value do
+            value when is_binary(value) ->
+              {:string, String.length(value)}
+
+            value when is_list(value) ->
+              {:list, length(value)}
+          end
+
+          error =
+            ((is = opts[:is]) && wrong_length(type, length, is, opts)) ||
+            ((min = opts[:min]) && too_short(type, length, min, opts)) ||
+            ((max = opts[:max]) && too_long(type, length, max, opts))
+
+          if error, do: [{field, error}], else: []
+    end)
+  end
+
+  defp wrong_length(_type, value, value, _opts) do
+    nil
+  end
+  defp wrong_length(:string, _length, value, opts) do
+    {message(opts, "should be %{count} character(s)"), count: value}
+  end
+  defp wrong_length(:list, _length, value, opts) do
+    {message(opts, "should have %{count} item(s)"), count: value}
+  end
+
+  defp too_short(_type, length, value, _opts) when length >= value do
+    nil
+  end
+  defp too_short(:string, _length, value, opts) do
+    {message(opts, "should be at least %{count} character(s)"), count: value}
+  end
+  defp too_short(:list, _length, value, opts) do
+    {message(opts, "should have at least %{count} item(s)"), count: value}
+  end
+
+  defp too_long(_type, length, value, _opts) when length <= value do
+    nil
+  end
+  defp too_long(:string, _length, value, opts) do
+    {message(opts, "should be at most %{count} character(s)"), count: value}
+  end
+  defp too_long(:list, _length, value, opts) do
+    {message(opts, "should have at most %{count} item(s)"), count: value}
+  end
+
+  defp message(opts, key \\ :message, default) do
+    Keyword.get(opts, key, default)
   end
 end
