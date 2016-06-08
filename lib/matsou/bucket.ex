@@ -36,14 +36,14 @@ defmodule Matsou.Bucket do
 
   defp into_structure(data, struct) do
     {:map, data, _, _, _} = data
-    data = data |> Enum.map(&foo/1) |> Enum.into(%{})
+    data = data |> Enum.map(&type/1) |> Enum.into(%{})
     struct(struct, data)
   end
 
-  defp foo({{key, :register}, value}) do
+  defp type({{key, :register}, value}) do
     {String.to_atom(key), value}
   end
-  defp foo(value) do
+  defp type(value) do
     value
   end
 end
