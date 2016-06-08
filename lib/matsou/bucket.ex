@@ -43,6 +43,9 @@ defmodule Matsou.Bucket do
   defp type({{key, :register}, value}) do
     {String.to_atom(key), value}
   end
+  defp type({{key, :flag}, value}) do
+    {String.to_atom(key), value}
+  end
   defp type(value) do
     value
   end

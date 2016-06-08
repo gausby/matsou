@@ -55,4 +55,49 @@ defmodule MatsouTest do
     assert %Matsou.Changeset{action: :delete} = UserBucket.delete(user)
     assert Matsou.Bucket.get(User, generated_key) == nil
   end
+
+
+  defmodule FlagBucket do
+    use Matsou.Bucket
+  end
+
+  defmodule Flag do
+    use Matsou.Schema
+    @bucket "user"
+
+    schema "flag" do
+      field :voted, :flag
+    end
+  end
+
+  test "flag" do
+    # insert a flag
+    flag =
+      %Flag{}
+      |> Matsou.Changeset.change(voted: true)
+      |> FlagBucket.insert
+
+    assert %Matsou.Changeset{action: :insert} = flag
+
+    generated_key = flag.data.__meta__.key
+
+    # get the flag
+    flag = Matsou.Bucket.get(Flag, generated_key)
+    assert %Flag{voted: true} = flag
+
+    # change data
+    change =
+      flag
+      |> Changeset.change(voted: false)
+      |> FlagBucket.update
+    assert %Changeset{action: :update, data: %{voted: false}} = change
+
+    # get the flag again
+    flag = Matsou.Bucket.get(Flag, generated_key)
+    assert %Flag{voted: false} = flag
+
+    # delete the flag
+    assert %Matsou.Changeset{action: :delete} = FlagBucket.delete(flag)
+    assert Matsou.Bucket.get(Flag, generated_key) == nil
+  end
 end
