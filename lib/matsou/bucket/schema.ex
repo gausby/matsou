@@ -57,13 +57,16 @@ defmodule Matsou.Bucket.Schema do
           CRDT.Map.put(acc, key, register)
 
         {:flag, key} ->
-          flag = CRDT.Flag.new
           case value do
             true ->
-              CRDT.Map.update(acc, :flag, key, &CRDT.Flag.enable/1)
+              acc
+              |> CRDT.Map.put(key, CRDT.Flag.new(key))
+              |> CRDT.Map.update(:flag, key, &CRDT.Flag.enable/1)
 
             _ ->
-              CRDT.Map.update(acc, :flag, key, &CRDT.Flag.disable/1)
+              acc
+              |> CRDT.Map.put(key, CRDT.Flag.new(key))
+              |> CRDT.Map.update(:flag, key, &CRDT.Flag.disable/1)
           end
       end
     end)

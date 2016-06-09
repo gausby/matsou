@@ -66,7 +66,8 @@ defmodule MatsouTest do
     @bucket "user"
 
     schema "flag" do
-      field :voted, :flag
+      field :name, :register
+      field :voted, :flag, default: false
     end
   end
 
@@ -74,7 +75,7 @@ defmodule MatsouTest do
     # insert a flag
     flag =
       %Flag{}
-      |> Matsou.Changeset.change(voted: true)
+      |> Matsou.Changeset.change(voted: true, name: "John Doe")
       |> FlagBucket.insert
 
     assert %Matsou.Changeset{action: :insert} = flag
@@ -95,6 +96,30 @@ defmodule MatsouTest do
     # get the flag again
     flag = Matsou.Bucket.get(Flag, generated_key)
     assert %Flag{voted: false} = flag
+    assert flag.name == "John Doe"
+
+    # delete the flag
+    assert %Matsou.Changeset{action: :delete} = FlagBucket.delete(flag)
+    assert Matsou.Bucket.get(Flag, generated_key) == nil
+  end
+
+  test "initialization of a flag in disabled default state" do
+    # insert a flag with default values (disabled)
+    flag = FlagBucket.insert(%Flag{})
+    generated_key = flag.data.__meta__.key
+    refute flag.data.voted
+
+    update =
+      Matsou.Bucket.get(Flag, generated_key)
+      |> Matsou.Changeset.change(voted: true)
+      |> FlagBucket.update
+    assert update.data.voted
+
+    update =
+      Matsou.Bucket.get(Flag, generated_key)
+      |> Matsou.Changeset.change(voted: false)
+      |> FlagBucket.update
+    refute update.data.voted
 
     # delete the flag
     assert %Matsou.Changeset{action: :delete} = FlagBucket.delete(flag)
