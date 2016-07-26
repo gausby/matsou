@@ -18,7 +18,7 @@ defmodule Matsou.Mixfile do
   end
 
   defp deps do
-    [{:riak, "~> 1.0.0", only: [:dev, :test]},
-     {:uuid, "~> 1.1.3"}]
+    [{:riak, "~> 1.1.0", only: [:dev, :test]},
+     {:uuid, "~> 1.1.4"}]
   end
 end
