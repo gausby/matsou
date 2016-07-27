@@ -118,8 +118,7 @@ defmodule Matsou.Bucket.Schema do
     update = Enum.reduce(changeset.changes, crdt, fn {key, value}, acc ->
       case {Map.get(changeset.types, key), to_string(key)} do
         {:register, key} ->
-          register = CRDT.Register.new(value)
-          CRDT.Map.put(acc, key, register)
+          CRDT.Map.update(acc, :register, key, &(CRDT.Register.set(&1, value)))
 
         {:counter, key} ->
           CRDT.Map.update(acc, :counter, key, fn counter ->
