@@ -53,32 +53,23 @@ defmodule Matsou.Bucket.Schema do
     data = Enum.reduce(changeset.changes, CRDT.Map.new(), fn {key, value}, acc ->
       case {Map.get(changeset.types, key), to_string(key)} do
         {:register, key} ->
-          register = CRDT.Register.new(value)
-          CRDT.Map.put(acc, key, register)
+          CRDT.Map.update(acc, :register, key, &(CRDT.Register.set(&1, value)))
 
         {:counter, key} ->
-          counter = CRDT.Counter.new()
-          CRDT.Map.put(acc, key, CRDT.Counter.increment(counter, value))
+          CRDT.Map.update(acc, :counter, key, fn counter ->
+            current = CRDT.Counter.value(counter)
+            CRDT.Counter.increment(counter, value - current)
+          end)
 
         {:set, key} ->
-          set =
-            Enum.reduce(MapSet.to_list(value), CRDT.Set.new(), fn(item, acc) ->
-              CRDT.Set.put(acc, item)
-            end)
-          CRDT.Map.put(acc, key, set)
+          CRDT.Map.update(acc, :set, key, fn current ->
+            Enum.reduce(value, current, &(CRDT.Set.put(&2, &1)))
+          end)
 
         {:flag, key} ->
-          case value do
-            true ->
-              acc
-              |> CRDT.Map.put(key, CRDT.Flag.new(key))
-              |> CRDT.Map.update(:flag, key, &CRDT.Flag.enable/1)
-
-            _ ->
-              acc
-              |> CRDT.Map.put(key, CRDT.Flag.new(key))
-              |> CRDT.Map.update(:flag, key, &CRDT.Flag.disable/1)
-          end
+          CRDT.Map.update(acc, :flag, key, fn flag ->
+            apply(CRDT.Flag, if(value, do: :enable, else: :disable), [flag])
+          end)
       end
     end)
 
