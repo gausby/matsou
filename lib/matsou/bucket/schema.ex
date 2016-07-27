@@ -127,10 +127,11 @@ defmodule Matsou.Bucket.Schema do
           end)
 
         {:set, key} ->
-          current_value = Map.get(changeset.data, String.to_atom(key))
-          deletes = MapSet.difference(current_value, value)
-          inserts = MapSet.difference(value, current_value)
           CRDT.Map.update(acc, :set, key, fn current ->
+            current_value = MapSet.new(CRDT.Set.value(current))
+            deletes = MapSet.difference(current_value, value)
+            inserts = MapSet.difference(value, current_value)
+
             current = Enum.reduce(deletes, current, &(CRDT.Set.delete(&2, &1)))
             Enum.reduce(inserts, current, &(CRDT.Set.put(&2, &1)))
           end)
