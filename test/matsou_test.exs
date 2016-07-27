@@ -4,126 +4,128 @@ defmodule MatsouTest do
 
   alias Matsou.Changeset
 
-  defmodule UserBucket do
-    use Matsou.Bucket
-  end
+  describe "registers" do
+    defmodule UserBucket do
+      use Matsou.Bucket
+    end
 
-  defmodule User do
-    use Matsou.Schema
+    defmodule User do
+      use Matsou.Schema
+      @bucket "user"
 
-    @bucket "user"
+      schema "profile" do
+        field :name, :register
+        field :email, :register, default: "john.doe@example.com"
+      end
+    end
 
-    schema "profile" do
-      field :name, :register
-      field :email, :register, default: "john.doe@example.com"
+    test "Should be able to get from a repo" do
+      user =
+        %User{}
+        |> Matsou.Changeset.change(name: "martin")
+        |> UserBucket.insert
+
+      generated_key = user.data.__meta__.key
+
+      assert %User{name: "martin"} = Matsou.Bucket.get(User, generated_key)
+    end
+
+    test "insert, find, change, update, and delete a register" do
+      # insert a user
+      user =
+        %User{}
+        |> Matsou.Changeset.change(name: "hello")
+        |> UserBucket.insert
+      assert %Matsou.Changeset{action: :insert} = user
+
+      generated_key = user.data.__meta__.key
+
+      # get the user
+      user = Matsou.Bucket.get(User, generated_key)
+      assert %User{email: "john.doe@example.com"} = user
+
+      # change data
+      change =
+        user
+        |> Changeset.change(email: "foo@example.com")
+        |> UserBucket.update
+      assert %Changeset{action: :update, data: %{email: "foo@example.com"}} = change
+
+      # delete user
+      assert %Matsou.Changeset{action: :delete} = UserBucket.delete(user)
+      assert Matsou.Bucket.get(User, generated_key) == nil
     end
   end
 
-  test "Should be able to get from a repo" do
-    user =
-      %User{}
-      |> Matsou.Changeset.change(name: "martin")
-      |> UserBucket.insert
-
-    generated_key = user.data.__meta__.key
-
-    assert %User{name: "martin"} = Matsou.Bucket.get(User, generated_key)
-  end
-
-  test "Should be able to insert, find, change, and delete" do
-    # insert a user
-    user =
-      %User{}
-      |> Matsou.Changeset.change(name: "hello")
-      |> UserBucket.insert
-    assert %Matsou.Changeset{action: :insert} = user
-
-    generated_key = user.data.__meta__.key
-
-    # get the user
-    user = Matsou.Bucket.get(User, generated_key)
-    assert %User{email: "john.doe@example.com"} = user
-
-    # change data
-    change =
-      user
-      |> Changeset.change(email: "foo@example.com")
-      |> UserBucket.update
-    assert %Changeset{action: :update, data: %{email: "foo@example.com"}} = change
-
-    # delete user
-    assert %Matsou.Changeset{action: :delete} = UserBucket.delete(user)
-    assert Matsou.Bucket.get(User, generated_key) == nil
-  end
-
-
-  defmodule FlagBucket do
-    use Matsou.Bucket
-  end
-
-  defmodule Flag do
-    use Matsou.Schema
-    @bucket "user"
-
-    schema "flag" do
-      field :name, :register
-      field :voted, :flag, default: false
+  describe "flags" do
+    defmodule FlagBucket do
+      use Matsou.Bucket
     end
-  end
 
-  test "flag" do
-    # insert a flag
-    flag =
-      %Flag{}
-      |> Matsou.Changeset.change(voted: true, name: "John Doe")
-      |> FlagBucket.insert
+    defmodule Flag do
+      use Matsou.Schema
+      @bucket "user"
 
-    assert %Matsou.Changeset{action: :insert} = flag
+      schema "flag" do
+        field :name, :register
+        field :voted, :flag, default: false
+      end
+    end
 
-    generated_key = flag.data.__meta__.key
+    test "insert, get, change, and update a flag" do
+      # insert a flag
+      flag =
+        %Flag{}
+        |> Matsou.Changeset.change(voted: true, name: "John Doe")
+        |> FlagBucket.insert
 
-    # get the flag
-    flag = Matsou.Bucket.get(Flag, generated_key)
-    assert %Flag{voted: true} = flag
+      assert %Matsou.Changeset{action: :insert} = flag
 
-    # change data
-    change =
-      flag
-      |> Changeset.change(voted: false)
-      |> FlagBucket.update
-    assert %Changeset{action: :update, data: %{voted: false}} = change
+      generated_key = flag.data.__meta__.key
 
-    # get the flag again
-    flag = Matsou.Bucket.get(Flag, generated_key)
-    assert %Flag{voted: false} = flag
-    assert flag.name == "John Doe"
+      # get the flag
+      flag = Matsou.Bucket.get(Flag, generated_key)
+      assert %Flag{voted: true} = flag
 
-    # delete the flag
-    assert %Matsou.Changeset{action: :delete} = FlagBucket.delete(flag)
-    assert Matsou.Bucket.get(Flag, generated_key) == nil
-  end
+      # change data
+      change =
+        flag
+        |> Changeset.change(voted: false)
+        |> FlagBucket.update
+      assert %Changeset{action: :update, data: %{voted: false}} = change
 
-  test "initialization of a flag in disabled default state" do
-    # insert a flag with default values (disabled)
-    flag = FlagBucket.insert(%Flag{})
-    generated_key = flag.data.__meta__.key
-    refute flag.data.voted
+      # get the flag again
+      flag = Matsou.Bucket.get(Flag, generated_key)
+      assert %Flag{voted: false} = flag
+      assert flag.name == "John Doe"
 
-    update =
-      Matsou.Bucket.get(Flag, generated_key)
-      |> Matsou.Changeset.change(voted: true)
-      |> FlagBucket.update
-    assert update.data.voted
+      # delete the flag
+      assert %Matsou.Changeset{action: :delete} = FlagBucket.delete(flag)
+      assert Matsou.Bucket.get(Flag, generated_key) == nil
+    end
 
-    update =
-      Matsou.Bucket.get(Flag, generated_key)
-      |> Matsou.Changeset.change(voted: false)
-      |> FlagBucket.update
-    refute update.data.voted
+    test "initialization of a flag in disabled default state" do
+      # insert a flag with default values (disabled)
+      flag = FlagBucket.insert(%Flag{})
+      generated_key = flag.data.__meta__.key
+      refute flag.data.voted
 
-    # delete the flag
-    assert %Matsou.Changeset{action: :delete} = FlagBucket.delete(flag)
-    assert Matsou.Bucket.get(Flag, generated_key) == nil
+      update =
+        Matsou.Bucket.get(Flag, generated_key)
+        |> Matsou.Changeset.change(voted: true)
+        |> FlagBucket.update
+      assert update.data.voted
+
+      update =
+        Matsou.Bucket.get(Flag, generated_key)
+        |> Matsou.Changeset.change(voted: false)
+        |> FlagBucket.update
+      refute update.data.voted
+
+      # delete the flag
+      assert %Matsou.Changeset{action: :delete} = FlagBucket.delete(flag)
+      assert Matsou.Bucket.get(Flag, generated_key) == nil
+    end
   end
 
   describe "Sets" do
@@ -145,7 +147,7 @@ defmodule MatsouTest do
       set =
         %Set{}
         |> Matsou.Changeset.change(interests: MapSet.new(["foo", "bar"]))
-        |> FlagBucket.insert
+        |> SetBucket.insert
 
       assert %Matsou.Changeset{action: :insert} = set
       generated_key = set.data.__meta__.key
@@ -175,7 +177,7 @@ defmodule MatsouTest do
     end
   end
 
-  describe "Counter" do
+  describe "Counters" do
     defmodule CounterBucket do
       use Matsou.Bucket
     end
@@ -194,7 +196,7 @@ defmodule MatsouTest do
       counter =
         %Counter{}
         |> Matsou.Changeset.change(visits: 1)
-        |> FlagBucket.insert
+        |> CounterBucket.insert
 
       assert %Matsou.Changeset{action: :insert} = counter
       generated_key = counter.data.__meta__.key
