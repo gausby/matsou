@@ -56,6 +56,13 @@ defmodule Matsou.Bucket.Schema do
           register = CRDT.Register.new(value)
           CRDT.Map.put(acc, key, register)
 
+        {:set, key} ->
+          set =
+            Enum.reduce(MapSet.to_list(value), CRDT.Set.new(), fn(item, acc) ->
+              CRDT.Set.put(acc, item)
+            end)
+          CRDT.Map.put(acc, key, set)
+
         {:flag, key} ->
           case value do
             true ->
@@ -109,6 +116,15 @@ defmodule Matsou.Bucket.Schema do
         {:register, key} ->
           register = CRDT.Register.new(value)
           CRDT.Map.put(acc, key, register)
+
+        {:set, key} ->
+          current_value = Map.get(changeset.data, String.to_atom(key))
+          deletes = MapSet.difference(current_value, value)
+          inserts = MapSet.difference(value, current_value)
+          CRDT.Map.update(acc, :set, key, fn current ->
+            current = Enum.reduce(deletes, current, &(CRDT.Set.delete(&2, &1)))
+            Enum.reduce(inserts, current, &(CRDT.Set.put(&2, &1)))
+          end)
 
         {:flag, key} ->
           flag = CRDT.Flag.new

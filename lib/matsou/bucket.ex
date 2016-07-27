@@ -46,6 +46,9 @@ defmodule Matsou.Bucket do
   defp type({{key, :flag}, value}) do
     {String.to_atom(key), value}
   end
+  defp type({{key, :set}, value}) do
+    {String.to_atom(key), MapSet.new(value)}
+  end
   defp type(value) do
     value
   end

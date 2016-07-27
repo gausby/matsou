@@ -125,4 +125,53 @@ defmodule MatsouTest do
     assert %Matsou.Changeset{action: :delete} = FlagBucket.delete(flag)
     assert Matsou.Bucket.get(Flag, generated_key) == nil
   end
+
+  describe "Sets" do
+    defmodule SetBucket do
+      use Matsou.Bucket
+    end
+
+    defmodule Set do
+      use Matsou.Schema
+      @bucket "user"
+
+      schema "set" do
+        field :interests, :set
+      end
+    end
+
+    test "create, insert, and get a set" do
+      # insert a set
+      set =
+        %Set{}
+        |> Matsou.Changeset.change(interests: MapSet.new(["foo", "bar"]))
+        |> FlagBucket.insert
+
+      assert %Matsou.Changeset{action: :insert} = set
+      generated_key = set.data.__meta__.key
+
+      # get the set
+      set = Matsou.Bucket.get(Set, generated_key)
+      expected_set = MapSet.new(["foo", "bar"])
+      assert %Set{interests: ^expected_set} = set
+
+      # change data and update
+      change =
+        set
+        |> Changeset.change(interests: fn interests ->
+             interests |> MapSet.put("baz") |> MapSet.delete("bar")
+           end)
+        |> SetBucket.update
+
+      expected_set = MapSet.new(["foo", "baz"])
+      assert %Changeset{action: :update, data: %{interests: ^expected_set}} = change
+
+      # get the set again
+      set = Matsou.Bucket.get(Set, generated_key)
+      assert %Set{interests: ^expected_set} = set
+
+      assert %Matsou.Changeset{action: :delete} = SetBucket.delete(set)
+      assert Matsou.Bucket.get(Set, generated_key) == nil
+    end
+  end
 end

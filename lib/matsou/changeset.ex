@@ -45,6 +45,15 @@ defmodule Matsou.Changeset do
   @doc """
 
   """
+  def put_change(data, changes, errors, valid?, key, value, type) when is_function(value) do
+    new_value = apply(value, [Map.get(data, key)])
+    unless is_function(new_value) do
+      put_change(data, changes, errors, valid?, key, new_value, type)
+    else
+      raise message: "an update function should not return a function"
+    end
+  end
+
   def put_change(data, changes, errors, valid?, key, value, _type) do
     cond do
       Map.get(data, key) != value ->

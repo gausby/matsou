@@ -8,6 +8,7 @@ defmodule Matsou.SchemaTest do
     schema "default" do
       field :name, :register
       field :age, :counter
+      field :interests, :set
     end
   end
 
@@ -17,12 +18,14 @@ defmodule Matsou.SchemaTest do
     schema "foo" do
       field :name, :register
       field :age, :counter
+      field :interests, :set
     end
   end
 
   test "should return a struct" do
     assert Map.has_key? %MyModule{}, :name
     assert Map.has_key? %MyModule{}, :age
+    assert Map.has_key? %MyModule{}, :interests
   end
 
   test "should have a db key assigned to nil by default" do
@@ -37,9 +40,14 @@ defmodule Matsou.SchemaTest do
     assert MyModuleWithBucketType.__schema__(:type) == "foo"
   end
 
-  test "a bucket type should " do
-    assert MyModuleWithBucketType.__schema__(:types) == %{name: :register, age: :counter}
+  test "bucket keys should have types" do
+    assert MyModuleWithBucketType.__schema__(:types) ==
+      %{name: :register,
+        age: :counter,
+        interests: :set}
     assert MyModuleWithBucketType.__schema__(:type, :name) == :register
+    assert MyModuleWithBucketType.__schema__(:type, :age) == :counter
+    assert MyModuleWithBucketType.__schema__(:type, :interests) == :set
   end
 
   defmodule MyModuleWithCustomDefaultKeyRepo do
