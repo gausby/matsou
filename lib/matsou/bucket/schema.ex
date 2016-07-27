@@ -137,14 +137,9 @@ defmodule Matsou.Bucket.Schema do
           end)
 
         {:flag, key} ->
-          flag = CRDT.Flag.new
-          case value do
-            true ->
-              CRDT.Map.update(acc, :flag, key, &CRDT.Flag.enable/1)
-
-            _ ->
-              CRDT.Map.update(acc, :flag, key, &CRDT.Flag.disable/1)
-          end
+          CRDT.Map.update(acc, :flag, key, fn flag ->
+            apply(CRDT.Flag, if(value, do: :enable, else: :disable), [flag])
+          end)
       end
     end)
 
