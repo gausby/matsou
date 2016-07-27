@@ -174,4 +174,49 @@ defmodule MatsouTest do
       assert Matsou.Bucket.get(Set, generated_key) == nil
     end
   end
+
+  describe "Counter" do
+    defmodule CounterBucket do
+      use Matsou.Bucket
+    end
+
+    defmodule Counter do
+      use Matsou.Schema
+      @bucket "user"
+
+      schema "counter" do
+        field :visits, :counter
+      end
+    end
+
+    test "create, insert, and get a counter" do
+      # insert a counter
+      counter =
+        %Counter{}
+        |> Matsou.Changeset.change(visits: 1)
+        |> FlagBucket.insert
+
+      assert %Matsou.Changeset{action: :insert} = counter
+      generated_key = counter.data.__meta__.key
+
+      # get the counter
+      counter = Matsou.Bucket.get(Counter, generated_key)
+      assert %Counter{visits: 1} = counter
+
+      # change data and update
+      change =
+        counter
+        |> Changeset.change(visits: fn visits -> visits + 41 end)
+        |> CounterBucket.update
+
+      assert %Changeset{action: :update, data: %{visits: 42}} = change
+
+      # get the counter again
+      counter = Matsou.Bucket.get(Counter, generated_key)
+      assert %Counter{visits: 42} = counter
+
+      assert %Matsou.Changeset{action: :delete} = CounterBucket.delete(counter)
+      assert Matsou.Bucket.get(Counter, generated_key) == nil
+    end
+  end
 end
