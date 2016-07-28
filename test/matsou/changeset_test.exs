@@ -31,6 +31,35 @@ defmodule Matsou.ChangesetTest do
     assert changeset.errors == []
   end
 
+  describe "casting value" do
+    test "casting strings allowing everything" do
+      params = %{"name" => "John Doe", "age" => "58", "interests" => "foo"}
+      changeset =
+        Changeset.cast(%MyModule{}, params, [:name, :age, :interests])
+
+      expected_interests = MapSet.new(["foo"])
+      assert %Matsou.Changeset{changes: %{interests: ^expected_interests,
+                                          name: "John Doe",
+                                          age: 58}} = changeset
+    end
+
+    test "casting strings omitting some" do
+      params = %{"name" => "John Doe", "age" => "58", "interests" => "foo"}
+      changeset =
+        Changeset.cast(%MyModule{}, params, [:name, :age])
+
+      assert %Matsou.Changeset{changes: %{name: "John Doe",
+                                          age: 58}} = changeset
+    end
+
+    test "casting invalid" do
+      changeset =
+        Changeset.cast(%MyModule{}, :invalid, [:name, :age, :interests])
+
+      assert %Matsou.Changeset{changes: %{}} = changeset
+    end
+  end
+
   describe "validating length of registers" do
     test "validating exact length" do
       topic = "John Doe"

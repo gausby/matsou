@@ -7,6 +7,8 @@ defmodule Matsou.Changeset do
   @type t :: %Changeset{action: action,
                         bucket: binary | nil,
                         type: binary | nil,
+                        params: %{String.t => term} | nil,
+                        allowed: [atom],
                         valid?: boolean(),
                         data: Matsou.Schema.t | nil,
                         types: nil | %{atom => Matsou.Type.t}, # todo Matsou.Type
@@ -17,6 +19,8 @@ defmodule Matsou.Changeset do
     action: nil,
     bucket: nil,
     type: nil,
+    params: nil,
+    allowed: [],
     valid?: nil,
     data: nil,
     types: nil,
@@ -167,4 +171,119 @@ defmodule Matsou.Changeset do
   defp message(opts, key \\ :message, default) do
     Keyword.get(opts, key, default)
   end
+
+  def cast(data, params, allowed) do
+    do_cast(data, params, allowed)
+  end
+
+  # todo do_cast: guard structs, accept only maps
+
+  defp do_cast(_data, %{__struct__: _} = params, _allowed) do
+    raise ArgumentError, message: "expected params to be a map, got: #{inspect params}"
+  end
+
+  defp do_cast(%{__struct__: module} = data, params, allowed) do
+    do_cast(data, module.__changeset__, %{}, params, allowed)
+  end
+
+  # todo do_cast: guard structs without type info
+  # todo do_cast: allow an already existing changeset with changes to be passed in as data
+
+  defp do_cast(%{} = data, %{} = types, %{} = changes, :invalid, allowed) when is_list(allowed) do
+    allowed = Enum.map(allowed, &process_empty_fields(&1, types))
+
+    %Changeset{data: data, params: nil, valid?: false, errors: [],
+               allowed: allowed, changes: changes, types: types}
+  end
+
+  defp do_cast(%{} = data, %{} = types, %{} = changes, %{} = params, allowed) when is_list(allowed) do
+    params = normalize_params(params)
+
+    {allowed, {changes, errors, valid?}} =
+      Enum.map_reduce(allowed, {changes, [], true},
+                      &process_param(&1, :allowed, params, types, data, &2))
+
+    %Changeset{params: params, data: data, valid?: valid?,
+               errors: Enum.reverse(errors), changes: changes, allowed: allowed,
+               types: types}
+  end
+
+  defp process_empty_fields(key, _types) when is_binary(key), do: String.to_existing_atom(key)
+  defp process_empty_fields(key, _types) when is_atom(key), do: key
+
+  defp process_param(key, kind, params, types, data, {changes, errors, valid?}) do
+    {key, param_key} = cast_key(key)
+    type = type!(types, key)
+    current = Map.get(data, key)
+
+    {key,
+     case cast_field(param_key, type, params, current, data, valid?) do
+       {:ok, nil, valid?} when kind == :allowed ->
+         {errors, valid?} = error_on_nil(kind, key, Map.get(changes, key), errors, valid?)
+         {changes, errors, valid?}
+       {:ok, value, valid?} ->
+         {Map.put(changes, key, value), errors, valid?}
+       {:missing, current} ->
+         {errors, valid?} = error_on_nil(kind, key, Map.get(changes, key, current), errors, valid?)
+         {changes, errors, valid?}
+       :invalid ->
+         {changes, [{key, {"is invalid", [type: type]}} | errors], false}
+     end}
+  end
+
+  defp type!(types, key) do
+    case Map.fetch(types, key) do
+      {:ok, type} ->
+        type
+      :error ->
+        raise ArgumentError, "unknown field `#{key}` (note only fields, " <>
+          "embeds, belongs_to, has_one and has_many associations are supported in changesets)"
+    end
+  end
+
+  defp cast_key(key) when is_binary(key),
+    do: {String.to_existing_atom(key), key}
+  defp cast_key(key) when is_atom(key),
+    do: {key, Atom.to_string(key)}
+
+  defp cast_field(param_key, type, params, current, _data, valid?) do
+    case Map.fetch(params, param_key) do
+      {:ok, value} ->
+        case Matsou.Type.cast(type, value) do
+          {:ok, ^current} ->
+            {:missing, current}
+
+          {:ok, value} ->
+            {:ok, value, valid?}
+
+          :error ->
+            :invalid
+        end
+
+      :error ->
+        {:missing, current}
+    end
+  end
+
+  # normalize keyword-lists to string key-value maps:
+  # [{:key, "value"}] -> [{"key" => "value"}]
+  defp normalize_params(params) do
+    Enum.reduce(params, nil, fn
+      {key, _value}, nil when is_binary(key) ->
+        nil
+
+      {key, _value}, _ when is_binary(key) ->
+        raise ArgumentError, "expected params to be a map with atoms or string keys, " <>
+                             "got a map with mixed keys: #{inspect params}"
+
+      {key, value}, acc when is_atom(key) ->
+        Map.put(acc || %{}, Atom.to_string(key), value)
+
+    end) || params
+  end
+
+  defp error_on_nil(:allowed, key, nil, errors, _valid?),
+    do: {[{key, {"can't be blank", []}} | errors], false}
+  defp error_on_nil(_kind, _key, _value, errors, valid?),
+    do: {errors, valid?}
 end
