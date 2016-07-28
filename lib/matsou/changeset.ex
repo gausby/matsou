@@ -111,6 +111,9 @@ defmodule Matsou.Changeset do
 
             value when is_list(value) ->
               {:list, length(value)}
+
+            value when is_map(value) ->
+              {:mapset, MapSet.size(value)}
           end
 
           error =
@@ -131,6 +134,9 @@ defmodule Matsou.Changeset do
   defp wrong_length(:list, _length, value, opts) do
     {message(opts, "should have %{count} item(s)"), count: value}
   end
+  defp wrong_length(:mapset, _length, value, opts) do
+    {message(opts, "should have %{count} item(s)"), count: value}
+  end
 
   defp too_short(_type, length, value, _opts) when length >= value do
     nil
@@ -141,6 +147,9 @@ defmodule Matsou.Changeset do
   defp too_short(:list, _length, value, opts) do
     {message(opts, "should have at least %{count} item(s)"), count: value}
   end
+  defp too_short(:mapset, _length, value, opts) do
+    {message(opts, "should have at least %{count} item(s)"), count: value}
+  end
 
   defp too_long(_type, length, value, _opts) when length <= value do
     nil
@@ -149,6 +158,9 @@ defmodule Matsou.Changeset do
     {message(opts, "should be at most %{count} character(s)"), count: value}
   end
   defp too_long(:list, _length, value, opts) do
+    {message(opts, "should have at most %{count} item(s)"), count: value}
+  end
+  defp too_long(:mapset, _length, value, opts) do
     {message(opts, "should have at most %{count} item(s)"), count: value}
   end
 

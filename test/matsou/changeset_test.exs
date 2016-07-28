@@ -10,6 +10,7 @@ defmodule Matsou.ChangesetTest do
     schema "user" do
       field :name, :register
       field :age, :counter
+      field :interests, :set
     end
   end
 
@@ -88,5 +89,67 @@ defmodule Matsou.ChangesetTest do
     assert exact_length.errors == []
     refute shorter.errors == []
     assert longer.errors == []
+  end
+
+  describe "validating set fields" do
+    test "validating exact size" do
+      topic = MapSet.new(["foo", "bar", "baz"])
+      exact_length =
+        %MyModule{}
+        |> Changeset.change(interests: topic)
+        |> Changeset.validate_length(:interests, is: MapSet.size(topic))
+      shorter =
+        %MyModule{}
+        |> Changeset.change(interests: topic)
+        |> Changeset.validate_length(:interests, is: MapSet.size(topic) - 1)
+      longer =
+        %MyModule{}
+        |> Changeset.change(interests: topic)
+        |> Changeset.validate_length(:interests, is: MapSet.size(topic) + 1)
+
+      assert exact_length.errors == []
+      refute shorter.errors == []
+      refute longer.errors == []
+    end
+
+    test "validating minimum size" do
+      topic = MapSet.new(["foo", "bar", "baz"])
+      exact_length =
+        %MyModule{}
+        |> Changeset.change(interests: topic)
+        |> Changeset.validate_length(:interests, min: MapSet.size(topic))
+      shorter =
+        %MyModule{}
+        |> Changeset.change(interests: topic)
+        |> Changeset.validate_length(:interests, min: MapSet.size(topic) - 1)
+      longer =
+        %MyModule{}
+        |> Changeset.change(interests: topic)
+        |> Changeset.validate_length(:interests, min: MapSet.size(topic) + 1)
+
+      assert exact_length.errors == []
+      assert shorter.errors == []
+      refute longer.errors == []
+    end
+
+    test "validating maximum size" do
+      topic = MapSet.new(["foo", "bar", "baz"])
+      exact_length =
+        %MyModule{}
+        |> Changeset.change(interests: topic)
+        |> Changeset.validate_length(:interests, max: MapSet.size(topic))
+      shorter =
+        %MyModule{}
+        |> Changeset.change(name: topic)
+        |> Changeset.validate_length(:name, max: MapSet.size(topic) - 1)
+      longer =
+        %MyModule{}
+        |> Changeset.change(name: topic)
+        |> Changeset.validate_length(:name, max: MapSet.size(topic) + 1)
+
+      assert exact_length.errors == []
+      refute shorter.errors == []
+      assert longer.errors == []
+    end
   end
 end
