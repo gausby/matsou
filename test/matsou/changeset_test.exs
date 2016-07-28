@@ -58,6 +58,26 @@ defmodule Matsou.ChangesetTest do
 
       assert %Matsou.Changeset{changes: %{}} = changeset
     end
+
+    test "casting strings and checking for required fields" do
+      params = %{"name" => "John Doe", "age" => "52"}
+
+      assert %Matsou.Changeset{valid?: false} =
+        %MyModule{}
+        |> Changeset.cast(Map.drop(params, ["age"]), [:name, :age])
+        |> Changeset.validate_required([:name, :age])
+
+      assert %Matsou.Changeset{valid?: true} =
+        %MyModule{}
+        |> Changeset.cast(params, [:name, :age])
+        |> Changeset.validate_required([:name, :age])
+
+      # already present values should count
+      assert %Matsou.Changeset{valid?: true} =
+        %MyModule{age: 32}
+        |> Changeset.cast(Map.drop(params, ["age"]), [:name, :age])
+        |> Changeset.validate_required([:name, :age])
+    end
   end
 
   describe "validating length of registers" do

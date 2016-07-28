@@ -8,7 +8,7 @@ defmodule Matsou.Changeset do
                         bucket: binary | nil,
                         type: binary | nil,
                         params: %{String.t => term} | nil,
-                        allowed: [atom],
+                        required: [atom],
                         valid?: boolean(),
                         data: Matsou.Schema.t | nil,
                         types: nil | %{atom => Matsou.Type.t}, # todo Matsou.Type
@@ -20,7 +20,7 @@ defmodule Matsou.Changeset do
     bucket: nil,
     type: nil,
     params: nil,
-    allowed: [],
+    required: [],
     valid?: nil,
     data: nil,
     types: nil,
@@ -99,8 +99,55 @@ defmodule Matsou.Changeset do
   @doc """
 
   """
-  def validate_required() do
-    # todo
+  @spec validate_required(t, list(atom) | atom, Keyword.t) :: t
+  def validate_required(%{required: required, errors: errors} = changeset, fields, opts \\ []) do
+    message = message(opts, "cannot be blank")
+    fields = List.wrap(fields)
+
+    new_errors =
+      for field <- fields, missing?(changeset, field), is_nil(errors[field]) do
+        {field, {message, []}}
+      end
+
+    case new_errors do
+      [] ->
+        %{changeset|required: fields ++ required}
+
+      _ ->
+        %{changeset|required: fields ++ required, errors: new_errors ++ errors, valid?: false}
+    end
+  end
+
+  defp missing?(changeset, field) when is_atom(field) do
+    case get_field(changeset, field) do
+      value when is_binary(value) ->
+        String.lstrip(value) == ""
+      value ->
+        value == nil
+    end
+  end
+  defp missing?(_changeset, field) do
+    raise ArgumentError, "validate_required/3 expects field names to be atoms, got: `#{inspect field}`"
+  end
+
+  @doc """
+
+  """
+  @spec get_field(t, atom, term) :: term
+  def get_field(%Changeset{changes: changes, data: data}, key, default \\ nil) do
+    case Map.fetch(changes, key) do
+      {:ok, value} ->
+        value
+
+      :error ->
+        case Map.fetch(data, key) do
+          {:ok, value} ->
+            value
+
+          :error ->
+            default
+        end
+    end
   end
 
   @doc """
@@ -193,7 +240,7 @@ defmodule Matsou.Changeset do
     allowed = Enum.map(allowed, &process_empty_fields(&1, types))
 
     %Changeset{data: data, params: nil, valid?: false, errors: [],
-               allowed: allowed, changes: changes, types: types}
+               required: allowed, changes: changes, types: types}
   end
 
   defp do_cast(%{} = data, %{} = types, %{} = changes, %{} = params, allowed) when is_list(allowed) do
@@ -201,10 +248,10 @@ defmodule Matsou.Changeset do
 
     {allowed, {changes, errors, valid?}} =
       Enum.map_reduce(allowed, {changes, [], true},
-                      &process_param(&1, :allowed, params, types, data, &2))
+                      &process_param(&1, :required, params, types, data, &2))
 
     %Changeset{params: params, data: data, valid?: valid?,
-               errors: Enum.reverse(errors), changes: changes, allowed: allowed,
+               errors: Enum.reverse(errors), changes: changes, required: allowed,
                types: types}
   end
 
