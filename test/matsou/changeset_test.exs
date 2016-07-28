@@ -31,64 +31,66 @@ defmodule Matsou.ChangesetTest do
     assert changeset.errors == []
   end
 
-  test "validating exact length of field with a string" do
-    topic = "John Doe"
-    exact_length =
-      %MyModule{}
-      |> Changeset.change(name: topic)
-      |> Changeset.validate_length(:name, is: String.length(topic))
-    shorter =
-      %MyModule{}
-      |> Changeset.change(name: topic)
-      |> Changeset.validate_length(:name, is: String.length(topic) - 1)
-    longer =
-      %MyModule{}
-      |> Changeset.change(name: topic)
-      |> Changeset.validate_length(:name, is: String.length(topic) + 1)
+  describe "validating length of registers" do
+    test "validating exact length" do
+      topic = "John Doe"
+      exact_length =
+        %MyModule{}
+        |> Changeset.change(name: topic)
+        |> Changeset.validate_length(:name, is: String.length(topic))
+      shorter =
+        %MyModule{}
+        |> Changeset.change(name: topic)
+        |> Changeset.validate_length(:name, is: String.length(topic) - 1)
+      longer =
+        %MyModule{}
+        |> Changeset.change(name: topic)
+        |> Changeset.validate_length(:name, is: String.length(topic) + 1)
 
-    assert exact_length.errors == []
-    refute shorter.errors == []
-    refute longer.errors == []
-  end
+      assert exact_length.errors == []
+      refute shorter.errors == []
+      refute longer.errors == []
+    end
 
-  test "validating minimum length of field with a string" do
-    topic = "John Doe"
-    exact_length =
-      %MyModule{}
-      |> Changeset.change(name: topic)
-      |> Changeset.validate_length(:name, min: String.length(topic))
-    shorter =
-      %MyModule{}
-      |> Changeset.change(name: topic)
-      |> Changeset.validate_length(:name, min: String.length(topic) - 1)
-    longer =
-      %MyModule{}
-      |> Changeset.change(name: topic)
-      |> Changeset.validate_length(:name, min: String.length(topic) + 1)
+    test "validating minimum length" do
+      topic = "John Doe"
+      exact_length =
+        %MyModule{}
+        |> Changeset.change(name: topic)
+        |> Changeset.validate_length(:name, min: String.length(topic))
+      shorter =
+        %MyModule{}
+        |> Changeset.change(name: topic)
+        |> Changeset.validate_length(:name, min: String.length(topic) - 1)
+      longer =
+        %MyModule{}
+        |> Changeset.change(name: topic)
+        |> Changeset.validate_length(:name, min: String.length(topic) + 1)
 
-    assert exact_length.errors == []
-    assert shorter.errors == []
-    refute longer.errors == []
-  end
+      assert exact_length.errors == []
+      assert shorter.errors == []
+      refute longer.errors == []
+    end
 
-  test "validating maximum length of field with a string" do
-    topic = "John Doe"
-    exact_length =
-      %MyModule{}
-      |> Changeset.change(name: topic)
-      |> Changeset.validate_length(:name, max: String.length(topic))
-    shorter =
-      %MyModule{}
-      |> Changeset.change(name: topic)
-      |> Changeset.validate_length(:name, max: String.length(topic) - 1)
-    longer =
-      %MyModule{}
-      |> Changeset.change(name: topic)
-      |> Changeset.validate_length(:name, max: String.length(topic) + 1)
+    test "validating maximum length" do
+      topic = "John Doe"
+      exact_length =
+        %MyModule{}
+        |> Changeset.change(name: topic)
+        |> Changeset.validate_length(:name, max: String.length(topic))
+      shorter =
+        %MyModule{}
+        |> Changeset.change(name: topic)
+        |> Changeset.validate_length(:name, max: String.length(topic) - 1)
+      longer =
+        %MyModule{}
+        |> Changeset.change(name: topic)
+        |> Changeset.validate_length(:name, max: String.length(topic) + 1)
 
-    assert exact_length.errors == []
-    refute shorter.errors == []
-    assert longer.errors == []
+      assert exact_length.errors == []
+      refute shorter.errors == []
+      assert longer.errors == []
+    end
   end
 
   describe "validating set fields" do
