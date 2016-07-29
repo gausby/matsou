@@ -31,6 +31,17 @@ defmodule Matsou.ChangesetTest do
     assert changeset.errors == []
   end
 
+  test "getting a field from a changeset" do
+    changeset =
+      %MyModule{age: 32, name: "not Joe"}
+      |> Changeset.change(name: "Joe")
+
+    # get the field from data if not present in changes
+    assert 32 = Changeset.get_field(changeset, :age)
+    # get field from changes if present in changes
+    assert "Joe" = Changeset.get_field(changeset, :name)
+  end
+
   describe "casting value" do
     test "casting strings allowing everything" do
       params = %{"name" => "John Doe", "age" => "58", "interests" => "foo"}

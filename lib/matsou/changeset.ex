@@ -151,6 +151,16 @@ defmodule Matsou.Changeset do
   end
 
   @doc """
+  Get the value of a changed field, if not present it will return the
+  value found in data, and alternatively return a provided default
+  value.
+  """
+  @spec get_change(t, atom, term) :: term
+  def get_change(%Changeset{changes: changes}, key, default \\ nil) do
+    Map.get(changes, key, default)
+  end
+
+  @doc """
 
   """
   def validate_length(changeset, field, opts) when is_list(opts) do
