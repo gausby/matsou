@@ -131,7 +131,9 @@ defmodule Matsou.Changeset do
   end
 
   @doc """
-
+  Get the value of a changed field, if not present it will return the
+  value found in data, and alternatively return a provided default
+  value.
   """
   @spec get_field(t, atom, term) :: term
   def get_field(%Changeset{changes: changes, data: data}, key, default \\ nil) do
@@ -151,9 +153,8 @@ defmodule Matsou.Changeset do
   end
 
   @doc """
-  Get the value of a changed field, if not present it will return the
-  value found in data, and alternatively return a provided default
-  value.
+  Get the value of a changed field, if not present it will return a
+  provided default value.
   """
   @spec get_change(t, atom, term) :: term
   def get_change(%Changeset{changes: changes}, key, default \\ nil) do
